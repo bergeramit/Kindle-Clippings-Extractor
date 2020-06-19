@@ -13,8 +13,14 @@ class Note:
     SEPARATOR = "\n=================================\n\n\n"
     MINIMUM_CHARACTERS_FOR_NOTE = 2
 
+    @staticmethod
+    def remove_kindles_prefix(title):
+        if title[0] not in string.ascii_letters:
+            title = title.replace(title[0], "")
+        return title
+
     def __init__(self, title, raw_timestamp, raw_data):
-        self._title = title
+        self._title = self.remove_kindles_prefix(title)
         self._timestamps = raw_timestamp
         self._data = "\n".join(raw_data)
 
@@ -84,9 +90,9 @@ class KindleNoteGenerator:
 
     def read_note(self):
         """
-        each note chunk is formatted as follows:
+        each note is formatted as follows:
         Title
-        Timestamp '|' separated
+        Timestamps
 
         Note data
         ...
