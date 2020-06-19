@@ -6,10 +6,11 @@ Options:
 """
 import os
 import string
+from itertools import groupby
 import docopt
 
 
-class Note:
+class KindleNote:
     SEPARATOR = "\n=================================\n\n\n"
     MINIMUM_CHARACTERS_FOR_NOTE = 2
 
@@ -37,46 +38,13 @@ class Note:
         return self._data
 
     def is_empty(self):
-        return len(self._data) <= Note.MINIMUM_CHARACTERS_FOR_NOTE
+        return len(self._data) <= KindleNote.MINIMUM_CHARACTERS_FOR_NOTE
 
     def __str__(self):
         if self.is_empty():
             return ""
 
-        return "\n".join([self._data, self._timestamps, Note.SEPARATOR])
-
-
-class Title:
-
-    def __init__(self, name):
-        self.name = name
-        self._notes = set()
-
-    @property
-    def notes(self):
-        return self._notes
-
-    def get_file_name(self):
-        for char in self.name:
-            if char not in string.ascii_letters:
-                self.name = self.name.replace(char, "_")
-        return self.name + "_notes.txt"
-
-    def add_note(self, note):
-        self._notes.add(note)
-
-    def __iter__(self):
-        self.remove_duplications()
-        return self
-
-    def __next__(self):
-        try:
-            return self._notes.pop()
-        except KeyError:
-            raise StopIteration
-
-    def remove_duplications(self):
-        pass
+        return "\n".join([self._data, self._timestamps, KindleNote.SEPARATOR])
 
 
 class KindleNoteGenerator:
@@ -114,7 +82,7 @@ class KindleNoteGenerator:
             raw_data.append(line)
             line = self._handler.readline().decode("utf-8").strip()
 
-        return Note(title, raw_timestamps, raw_data)
+        return KindleNote(title, raw_timestamps, raw_data)
 
     def __next__(self):
         try:
@@ -126,27 +94,26 @@ class KindleNoteGenerator:
         return note
 
 
-def get_notes_per_title(notes_file_path):
-    titles = {}
-    for note in KindleNoteGenerator(notes_file_path):
-        titles[note.title] = titles.get(note.title, Title(note.title))
-        titles[note.title].add_note(note)
-    return titles
+def get_file_name(name):
+    for char in name:
+        if char not in string.ascii_letters:
+            name = name.replace(char, "_")
+    return name + "_notes.txt"
 
 
-def save_notes_to_files(titles, output_notes_dir):
-    for title in titles.values():
+def save_notes_to_file(title, notes, output_dir):
+    title_file_path = os.path.join(output_dir, get_file_name(title))
 
-        title_file_path = os.path.join(output_notes_dir, title.get_file_name())
-        with open(title_file_path, "w+", encoding="utf-8") as title_file_handler:
-            title_file_handler.write(title.name + "\n\n")
-            for note in title:
-                title_file_handler.write(str(note))
+    with open(title_file_path, "w+", encoding="utf-8") as title_file_handler:
+        title_file_handler.write(title + "\n\n")
+
+        for note in notes:
+            title_file_handler.write(str(note))
 
 
-def extract_notes(notes_file_path, output_notes_dir):
-    titles = get_notes_per_title(notes_file_path)
-    save_notes_to_files(titles, output_notes_dir)
+def extract_notes(notes_file_path, output_dir):
+    for title, notes in groupby(KindleNoteGenerator(notes_file_path), lambda x: x.title):
+        save_notes_to_file(title, notes, output_dir)
 
 
 if __name__ == '__main__':
