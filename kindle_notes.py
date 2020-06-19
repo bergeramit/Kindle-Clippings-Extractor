@@ -1,3 +1,18 @@
+"""
+Kindle Notes are saved in a specific format.
+Kindle Note Entry Structure:
+
+line 1:     Book Title (Author)
+line 2:     Page | location | datetime => timestamps
+line 3:     note data - the actual highlight
+line 4:     ...
+line n-1:   note data - the actual highlight
+line n:     ==========
+
+line n+1:   Next Book Title (Author)
+and so on...
+
+"""
 import string
 
 class KindleNote:
@@ -59,15 +74,9 @@ class KindleNotesGenerator:
 
     def __next__(self):
         """
-        each note is formatted as follows:
-        Title
-        Timestamps
-
-        Note data
-        Note data
-        ...
-        Note data
-        ==========
+        Reads a note block every time called.
+        The notes are formed according to the format
+            in the __doc__ of this module.
         """
         try:
             title = self._read_clean_line()
@@ -80,9 +89,8 @@ class KindleNotesGenerator:
 
         raw_timestamps = self._read_clean_line()
 
-        # comment line - useless for parsing
+        # blank line - useless for parsing
         self._read_clean_line()
         raw_data = self._read_note_data()
 
         return KindleNote(title, raw_timestamps, raw_data)
-
