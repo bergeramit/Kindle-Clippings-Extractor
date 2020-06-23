@@ -4,8 +4,9 @@ Kindle Note Entry Structure:
 
 line 1:     Book Title (Author)
 line 2:     Page | location | datetime => timestamps
-line 3:     note data - the actual highlight
-line 4:     ...
+line 3:
+line 4:     note data - the actual highlight
+line 5:     ...
 line n-1:   note data - the actual highlight
 line n:     ==========
 
@@ -21,9 +22,11 @@ class KindleNote:
 
     @staticmethod
     def remove_kindles_prefix(title):
-        if title[0] not in string.ascii_letters:
-            title = title.replace(title[0], "")
-        return title
+        """This is because kindle has decided to add random prefixes
+            to the titles
+        """
+        clean_title = title.replace(title[0], "") if title[0] not in string.ascii_letters else title
+        return clean_title
 
     def __init__(self, title, raw_timestamp, raw_data):
         self._title = self.remove_kindles_prefix(title)
@@ -42,17 +45,17 @@ class KindleNote:
     def data(self):
         return self._data
 
-    def is_empty(self):
+    def _is_empty(self):
         return len(self._data) <= KindleNote.MINIMUM_CHARACTERS_FOR_NOTE
 
     def __str__(self):
-        if self.is_empty():
+        if self._is_empty():
             return ""
 
         return "\n".join([self._data, self._timestamps, KindleNote.SEPARATOR])
 
 
-class KindleNotesGenerator:
+class KindleNotesIterator:
     KINDLE_END_NOTE = "=========="
 
     def __init__(self, notes_file_path):
@@ -61,36 +64,38 @@ class KindleNotesGenerator:
     def __iter__(self):
         return self
 
-    def _read_clean_line(self):
+    def _readline(self):
         return self._handler.readline().decode("utf-8").strip()
 
     def _read_note_data(self):
         raw_data = []
-        line = self._read_clean_line()
-        while line != KindleNotesGenerator.KINDLE_END_NOTE:
+        line = self._readline()
+        while line != KindleNotesIterator.KINDLE_END_NOTE:
             raw_data.append(line)
-            line = self._read_clean_line()
+            line = self._readline()
         return raw_data
 
     def __next__(self):
         """
         Reads a note block every time called.
         The notes are formed according to the format
-            in the __doc__ of this module.
+        in the __doc__ of this module.
         """
         try:
-            title = self._read_clean_line()
+            title = self._readline()
 
             if not title:
-                raise ValueError
+                self._handler.close()
+                raise StopIteration
+
         except ValueError:
             self._handler.close()
             raise StopIteration
 
-        raw_timestamps = self._read_clean_line()
+        raw_timestamps = self._readline()
 
         # blank line - useless for parsing
-        self._read_clean_line()
+        self._readline()
         raw_data = self._read_note_data()
 
         return KindleNote(title, raw_timestamps, raw_data)
