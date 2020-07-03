@@ -16,6 +16,27 @@ and so on...
 """
 import string
 
+
+def is_not_a_prefix(note, unique_notes):
+    return all([note.data not in unique_note.data for unique_note in unique_notes])
+
+
+def remove_duplicate_notes(notes):
+    notes = [note for note in notes]
+
+    # sort notes by data length
+    notes_by_data_length = sorted(notes, key=lambda x: len(x.data), reverse=True)
+    
+    # add notes that are note already present
+    unique_notes = []
+    for note in notes_by_data_length:
+        if is_not_a_prefix(note, unique_notes):
+            unique_notes.append(note)
+
+    # sorted by the original kindle sorting algorithms - combines location and page
+    return sorted(unique_notes, key=lambda x: notes.index(x))
+
+
 class KindleNote:
     SEPARATOR = "\n=================================\n\n\n"
     MINIMUM_CHARACTERS_FOR_NOTE = 2

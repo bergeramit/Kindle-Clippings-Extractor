@@ -1,6 +1,7 @@
 """Usage: extract_notes_from_kindle.py <kindle_notes_file> <output_dir>
 
-TODO: add more explanation, "split file into different files by book"
+This Extractor extracts the Clippings to different files, with the title of the book
+as the filename and the notes for that specific file inside.
 
 Options:
     kindle_notes_file        The My_Clippings.txt from kindle file system
@@ -10,7 +11,7 @@ import os
 import string
 from itertools import groupby
 import docopt
-from kindle_notes import KindleNotesIterator
+from kindle_notes import KindleNotesIterator, remove_duplicate_notes
 
 
 def get_clean_file_name(name):
@@ -32,6 +33,7 @@ def extract_notes(notes_file_path, output_dir):
     titles = []
     kindle_notes_iterator = KindleNotesIterator(notes_file_path)
     for title, notes in groupby(kindle_notes_iterator, lambda x: x.title):
+        notes = remove_duplicate_notes(notes)
         save_notes_to_file(title, notes, output_dir)
         titles.append(title)
 
