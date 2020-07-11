@@ -22,7 +22,7 @@ def get_clean_file_name(name):
 def save_notes_to_file(title, notes, output_dir):
     title_file_path = os.path.join(output_dir, get_clean_file_name(title))
 
-    with open(title_file_path, "w+", encoding="utf-8") as title_file_handler:
+    with open(title_file_path, "a+", encoding="utf-8") as title_file_handler:
         title_file_handler.write(title + "\n\n")
 
         for note in notes:
